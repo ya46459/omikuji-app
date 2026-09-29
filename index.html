@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>おみくじ</title>
+<style>
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+    background: #fdf3e1; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; color: #3b2a1a;
+  }
+  h1 { margin: 0; font-size: 1.6rem; letter-spacing: .3em; }
+  #result {
+    width: 220px; height: 220px; display: flex; align-items: center; justify-content: center;
+    font-size: 5rem; font-weight: bold; background: #fff; border: 4px solid #b3261e;
+    border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  }
+  #result.pop { animation: pop .4s ease; }
+  @keyframes pop { 0% { transform: scale(.5); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+  #comment { min-height: 1.5em; font-size: 1.2rem; text-align: center; padding: 0 16px; }
+  button {
+    font: inherit; font-size: 1.4rem; padding: 12px 48px; color: #fff; background: #b3261e;
+    border: none; border-radius: 999px; cursor: pointer;
+  }
+  button:hover { background: #8f1d17; }
+</style>
+</head>
+<body>
+  <h1>おみくじ</h1>
+  <div id="result">？</div>
+  <div id="comment">ボタンを押して運勢を占おう</div>
+  <button id="draw">引く</button>
+<script>
+  const fortunes = [
+    { name: "大吉", color: "#b3261e", comment: "最高の運勢！何をやってもうまくいく日です。" },
+    { name: "中吉", color: "#d9600b", comment: "いい流れが来ています。前向きに進もう。" },
+    { name: "小吉", color: "#2e7d32", comment: "小さな幸せが見つかりそう。" },
+    { name: "末吉", color: "#1565c0", comment: "焦らずコツコツ。これから運が開けます。" },
+    { name: "凶",   color: "#555",    comment: "今日は慎重に。明日はきっといい日になります。" }
+  ];
+  const result = document.getElementById("result");
+  const comment = document.getElementById("comment");
+  let audio;
+  function tone(freq, start, dur, type = "sine", vol = 0.25) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = audio.currentTime + start;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(audio.destination);
+    o.start(t); o.stop(t + dur);
+  }
+  function playSound(name) {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    // シャカシャカ音（ドラムロール風）
+    for (let i = 0; i < 8; i++) tone(180 + Math.random() * 60, i * 0.06, 0.05, "square", 0.08);
+    const t0 = 0.55;
+    if (name === "凶") {
+      tone(220, t0, 0.35, "sawtooth", 0.15);
+      tone(165, t0 + 0.3, 0.6, "sawtooth", 0.15);
+    } else {
+      const notes = { "大吉": [523, 659, 784, 1047], "中吉": [523, 659, 784],
+                      "小吉": [523, 659], "末吉": [523] }[name];
+      notes.forEach((n, i) => tone(n, t0 + i * 0.12, 0.5));
+    }
+  }
+  document.getElementById("draw").addEventListener("click", () => {
+    const f = fortunes[Math.floor(Math.random() * fortunes.length)];
+    playSound(f.name);
+    result.textContent = f.name;
+    result.style.color = f.color;
+    result.style.borderColor = f.color;
+    comment.textContent = f.comment;
+    result.classList.remove("pop");
+    void result.offsetWidth;
+    result.classList.add("pop");
+  });
+</script>
+</body>
+</html>
